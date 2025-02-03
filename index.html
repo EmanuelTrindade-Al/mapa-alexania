@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa de Alexânia - OSM</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+        .circle-number {
+            background-color: gray;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 40px;  /* Para centralizar o número */
+            width: 40px;
+            height: 40px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        var map = L.map('map').setView([-16.0833, -48.5000], 15);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+        
+        var quadras = [
+            { lat: -16.074919, lng: -48.499585, id: 212 },
+            { lat: -16.073372, lng: -48.501120, id: 229},
+            { lat:-16.074032, lng: -48.501109, id: 222},
+            { lat:-16.074723, lng: -48.501248, id: 213},
+            { lat:-16.075352, lng: -48.501323, id: 204},
+            { lat:-16.076032, lng: -48.501366, id: 196},
+            { lat:-16.076744, lng: -48.501388, id: 188},
+            { lat:-16.077403, lng: -48.501484, id: 182},
+            { lat:-16.078073, lng: -48.501602, id: 166},
+            { lat: -16.073280, lng: -48.502536, id: 230},
+            { lat: -16.073852, lng: -48.502632, id: 223},
+            { lat: -16.074563, lng: -48.502707, id: 214},
+            { lat: -16.075228, lng: -48.502766, id: 205},
+            { lat: -16.075919, lng: -48.502836, id: 197},
+            { lat: -16.076579, lng: -48.503003, id: 189},
+            { lat: -16.077254, lng: -48.502981, id: 183},
+            { lat: -16.077970, lng: -48.503067, id: 167},
+            { lat: -16.073073, lng: -48.504038, id: 231},
+            { lat: -16.073754, lng: -48.504113, id: 224},
+            { lat: -16.074424, lng: -48.504145, id: 215},
+            { lat: -16.075084, lng: -48.504242, id: 206},
+            { lat: -16.075692, lng: -48.504360, id: 199},
+            { lat: -16.076465, lng: -48.504403, id: 190},
+            { lat: -16.077053, lng: -48.504553, id: 184},
+            { lat: -16.077754, lng: -48.504564, id: 168},
+            { lat: -16.072950, lng: -48.505218, id: 4},
+            { lat: -16.073610, lng: -48.505266, id: 3},
+            { lat: -16.074249, lng: -48.505706, id: 2},
+            { lat: -16.074883, lng: -48.505797, id: 207},
+            { lat: -16.075553, lng: -48.505883, id: 199},
+            { lat: -16.076228, lng: -48.505931, id: 191},
+            { lat: -16.076888, lng: -48.506087, id: 185},
+            { lat: -16.077548, lng: -48.506146, id: 169}
+        ];
+        
+        quadras.forEach(function(location) {
+            var circle = L.circle([location.lat, location.lng], {
+                color: 'gray',
+                fillColor: 'gray',
+                fillOpacity: 0.6,
+                radius: 20
+            }).addTo(map);
+            
+            // Criar o marcador para o número ao lado do círculo
+            var numberIcon = L.divIcon({
+                className: 'circle-number',
+                html: location.id,  // Exibe o número ao lado do círculo
+                iconSize: [40, 40],
+                iconAnchor: [20, 20],  // Posição do círculo
+                popupAnchor: [50, 0]  // Posição do número à direita do círculo
+            });
+            
+            var marker = L.marker([location.lat, location.lng], { icon: numberIcon }).addTo(map);
+            
+            // Função para mudar a cor do círculo e do número
+            function changeColor() {
+                var currentColor = circle.options.fillColor;
+                var newColor = currentColor === 'gray' ? 'green' : 'gray';
+                
+                // Muda a cor do círculo
+                circle.setStyle({
+                    fillColor: newColor,
+                    color: newColor
+                });
+
+                // Muda a cor do marcador (número)
+                marker._icon.style.backgroundColor = newColor;
+            }
+
+            // Evento de clique no círculo
+            circle.on('click', function() {
+                changeColor();
+            });
+
+            // Evento de clique no número
+            marker.on('click', function() {
+                changeColor();
+            });
+        });
+    </script>
+</body>
+</html>
