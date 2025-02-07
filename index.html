@@ -21,6 +21,8 @@
             font-size: 16px;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.0"></script>
+
 </head>
 <body>
     <div id="map"></div>
@@ -113,5 +115,76 @@
             });
         });
     </script>
+
+<script src="https://cdn.jsdelivr.net/npm/appwrite@latest"></script>
+<script>
+    const { Client, Databases, ID, Query } = Appwrite;
+
+const client = new Client()
+    client
+    .setEndpoint('https://cloud.appwrite.io/v1') // URL do Appwrite
+    .setProject('67a184f0003d528ef9ae'); // Substitua pelo seu ID do projeto
+
+const database = new Databases(client);
+
+console.log(client);
+console.log(database);
+
+async function fetchData() {
+  try {
+    const response = await databases.listDocuments("DATABASE_ID", "COLLECTION_ID");
+    console.log("Dados recebidos:", response);
+  } catch (error) {
+    console.error("Erro ao buscar dados:", error);
+  }
+}
+
+fetchData();
+
+
+</script>
+<script>
+async function salvarStatusQuadra(quadra, status) {
+    console.log("🔵 Tentando salvar status...");
+    console.log("📍 Quadra:", quadra, "🟢 Novo Status:", status);
+
+    try {
+        // Verifica se já existe um documento para essa quadra
+        const res = await database.listDocuments('67a18532002b5c1c9e36', '67a1853b00111b8799ea', [
+            Query.equal("quadra", quadra)
+        ]);
+
+        console.log("📄 Documentos encontrados:", res.documents.length);
+
+        if (res.documents.length > 0) {
+            console.log("🟡 Atualizando documento existente:", res.documents[0].$id);
+            await database.updateDocument('67a18532002b5c1c9e36', '67a1853b00111b8799ea', res.documents[0].$id, { status });
+            console.log("✅ Status atualizado com sucesso!");
+        } else {
+            console.log("🆕 Criando novo documento...");
+            await database.createDocument('67a18532002b5c1c9e36', '67a1853b00111b8799ea', ID.unique(), { quadra, status });
+            console.log("✅ Novo status salvo com sucesso!");
+        }
+    } catch (error) {
+        console.error("❌ Erro ao salvar status:", error);
+    }
+}
+
+
+</script>
+<script>
+async function carregarStatusQuadras() {
+    try {
+        const records = await database.listDocuments('67a18532002b5c1c9e36', '67a1853b00111b8799ea');
+        records.documents.forEach(record => {
+            atualizarCorQuadra(record.quadra, record.status);
+        });
+    } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+    }
+}
+
+</script>
+
 </body>
 </html>
