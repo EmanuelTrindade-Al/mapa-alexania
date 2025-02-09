@@ -5,14 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mapa de Alexânia - OSM</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Firebase SDK versão 8 (não modular) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
     <style>
         #map {
             height: 100vh;
             width: 100%;
         }
         .circle-number {
-            background-color: gray;
-            color: white;
+            background-color: rgba(128, 128, 128, 0);
+            color: rgb(0, 0, 0);
             border-radius: 50%;
             text-align: center;
             line-height: 40px;  /* Para centralizar o número */
@@ -21,12 +25,11 @@
             font-size: 16px;
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.0"></script>
-
 </head>
 <body>
     <div id="map"></div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <script>
         var map = L.map('map').setView([-16.0833, -48.5000], 15);
         
@@ -69,122 +72,89 @@
             { lat: -16.076888, lng: -48.506087, id: 185},
             { lat: -16.077548, lng: -48.506146, id: 169}
         ];
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAI6YfaL9yjdjZIGdbuizmoKelkPy6SDB4",
+            authDomain: "territoriomapa-80dda.firebaseapp.com",
+            projectId: "territoriomapa-80dda",
+            storageBucket: "territoriomapa-80dda.firebasestorage.app",
+            messagingSenderId: "292087542996",
+            appId: "1:292087542996:web:8dafe71fc61f8dc1b13741",
+            measurementId: "G-XB5TET0XGE"
+        };
+
+        // Inicializa o Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
         
         quadras.forEach(function(location) {
-            var circle = L.circle([location.lat, location.lng], {
-                color: 'gray',
-                fillColor: 'gray',
-                fillOpacity: 0.6,
-                radius: 20
-            }).addTo(map);
-            
-            // Criar o marcador para o número ao lado do círculo
-            var numberIcon = L.divIcon({
-                className: 'circle-number',
-                html: location.id,  // Exibe o número ao lado do círculo
-                iconSize: [40, 40],
-                iconAnchor: [20, 20],  // Posição do círculo
-                popupAnchor: [50, 0]  // Posição do número à direita do círculo
-            });
-            
-            var marker = L.marker([location.lat, location.lng], { icon: numberIcon }).addTo(map);
-            
-            // Função para mudar a cor do círculo e do número
-            function changeColor() {
-                var currentColor = circle.options.fillColor;
-                var newColor = currentColor === 'gray' ? 'green' : 'gray';
-                
-                // Muda a cor do círculo
-                circle.setStyle({
-                    fillColor: newColor,
-                    color: newColor
+            // Carregar o estado da cor da quadra do Firestore
+            db.collection("quadras").doc(location.id.toString()).get()
+            .then((doc) => {
+                let color = 'gray';  // Cor padrão (caso o documento não exista)
+                if (doc.exists) {
+                    color = doc.data().color; // Se o documento existir, pegar a cor armazenada
+                }
+
+                // Criar o círculo com a cor carregada
+                var circle = L.circle([location.lat, location.lng], {
+                    color: color,
+                    fillColor: color,
+                    fillOpacity: 0.6,
+                    radius: 20
+                }).addTo(map);
+
+                // Criar o marcador para o número
+                var numberIcon = L.divIcon({
+                    className: 'circle-number',
+                    html: location.id,
+                    iconSize: [40, 40],
+                    iconAnchor: [20, 20],
+                    popupAnchor: [50, 0]
                 });
 
-                // Muda a cor do marcador (número)
-                marker._icon.style.backgroundColor = newColor;
-            }
+                var marker = L.marker([location.lat, location.lng], { icon: numberIcon }).addTo(map);
 
-            // Evento de clique no círculo
-            circle.on('click', function() {
-                changeColor();
-            });
+                // Função para mudar a cor do círculo e do número
+                function changeColor() {
+                    var currentColor = circle.options.fillColor;
+                    var newColor = currentColor === 'gray' ? 'green' : 'gray';
 
-            // Evento de clique no número
-            marker.on('click', function() {
-                changeColor();
+                    // Muda a cor do círculo
+                    circle.setStyle({
+                        fillColor: newColor,
+                        color: newColor
+                    });
+
+                    // Muda a cor do marcador (número)
+                    marker._icon.style.backgroundColor = newColor;
+
+                    // Salva a cor no Firestore
+                    saveColorToFirestore(location.id, newColor);
+                }
+
+                // Evento de clique no círculo
+                circle.on('click', function() {
+                    changeColor();
+                });
+
+                // Evento de clique no número
+                marker.on('click', function() {
+                    changeColor();
+                });
             });
         });
-    </script>
 
-<script src="https://cdn.jsdelivr.net/npm/appwrite@latest"></script>
-<script>
-    const { Client, Databases, ID, Query } = Appwrite;
-
-const client = new Client()
-    client
-    .setEndpoint('https://cloud.appwrite.io/v1') // URL do Appwrite
-    .setProject('67a184f0003d528ef9ae'); // Substitua pelo seu ID do projeto
-
-const database = new Databases(client);
-
-console.log(client);
-console.log(database);
-
-async function fetchData() {
-  try {
-    const response = await databases.listDocuments("DATABASE_ID", "COLLECTION_ID");
-    console.log("Dados recebidos:", response);
-  } catch (error) {
-    console.error("Erro ao buscar dados:", error);
-  }
-}
-
-fetchData();
-
-
-</script>
-<script>
-async function salvarStatusQuadra(quadra, status) {
-    console.log("🔵 Tentando salvar status...");
-    console.log("📍 Quadra:", quadra, "🟢 Novo Status:", status);
-
-    try {
-        // Verifica se já existe um documento para essa quadra
-        const res = await database.listDocuments('67a18532002b5c1c9e36', '67a1853b00111b8799ea', [
-            Query.equal("quadra", quadra)
-        ]);
-
-        console.log("📄 Documentos encontrados:", res.documents.length);
-
-        if (res.documents.length > 0) {
-            console.log("🟡 Atualizando documento existente:", res.documents[0].$id);
-            await database.updateDocument('67a18532002b5c1c9e36', '67a1853b00111b8799ea', res.documents[0].$id, { status });
-            console.log("✅ Status atualizado com sucesso!");
-        } else {
-            console.log("🆕 Criando novo documento...");
-            await database.createDocument('67a18532002b5c1c9e36', '67a1853b00111b8799ea', ID.unique(), { quadra, status });
-            console.log("✅ Novo status salvo com sucesso!");
+        // Função para salvar no Firestore
+        function saveColorToFirestore(id, color) {
+            db.collection("quadras").doc(id.toString()).set({
+                color: color
+            }).then(() => {
+                console.log("Cor salva com sucesso no Firestore!");
+            }).catch((error) => {
+                console.error("Erro ao salvar no Firestore: ", error);
+            });
         }
-    } catch (error) {
-        console.error("❌ Erro ao salvar status:", error);
-    }
-}
-
-
-</script>
-<script>
-async function carregarStatusQuadras() {
-    try {
-        const records = await database.listDocuments('67a18532002b5c1c9e36', '67a1853b00111b8799ea');
-        records.documents.forEach(record => {
-            atualizarCorQuadra(record.quadra, record.status);
-        });
-    } catch (error) {
-        console.error("Erro ao carregar dados:", error);
-    }
-}
-
-</script>
-
+    </script>
 </body>
 </html>
