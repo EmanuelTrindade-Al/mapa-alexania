@@ -9,6 +9,9 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+
+
     <style>
         #map {
             height: 100vh;
@@ -27,6 +30,39 @@
     </style>
 </head>
 <body>
+
+    <div>
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="password" placeholder="Senha">
+        <button onclick="login()">Entrar</button>
+        <button onclick="logout()">Sair</button>
+    </div>
+    
+    <script>
+    function login() {
+        var email = document.getElementById("email").value;
+        var password = document.getElementById("password").value;
+    
+        firebase.auth().signInWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+            var user = userCredential.user;
+            console.log("Usuário logado:", user.email);
+        })
+        .catch((error) => {
+            console.error("Erro no login:", error.message);
+        });
+    }
+    
+    function logout() {
+        firebase.auth().signOut().then(() => {
+            console.log("Usuário saiu.");
+        }).catch((error) => {
+            console.error("Erro ao sair:", error);
+        });
+    }
+    </script>
+    
+    
     <div id="map"></div>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -117,21 +153,35 @@
 
                 // Função para mudar a cor do círculo e do número
                 function changeColor() {
-                    var currentColor = circle.options.fillColor;
-                    var newColor = currentColor === 'gray' ? 'green' : 'gray';
+                var user = firebase.auth().currentUser;
 
-                    // Muda a cor do círculo
-                    circle.setStyle({
-                        fillColor: newColor,
-                        color: newColor
-                    });
+                    if (user) {
+                        var userEmail = user.email;
 
-                    // Muda a cor do marcador (número)
-                    marker._icon.style.backgroundColor = newColor;
+                        // Verifica se o usuário tem permissão de editor
+                        db.collection("usuarios").doc(userEmail).get().then((doc) => {
+                            if (doc.exists && doc.data().role === "editor") {
+                                var currentColor = circle.options.fillColor;
+                                var newColor = currentColor === 'gray' ? 'green' : 'gray';
 
-                    // Salva a cor no Firestore
-                    saveColorToFirestore(location.id, newColor);
+                                circle.setStyle({
+                                    fillColor: newColor,
+                                    color: newColor
+                                });
+
+                                marker._icon.style.backgroundColor = newColor;
+
+                                // Salva no Firestore
+                                saveColorToFirestore(location.id, newColor);
+                            } else {
+                                alert("Você não tem permissão para alterar as quadras.");
+                            }
+                        });
+                    } else {
+                        alert("Faça login para interagir com o mapa.");
+                    }
                 }
+
 
                 // Evento de clique no círculo
                 circle.on('click', function() {
